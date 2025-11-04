@@ -1,0 +1,302 @@
+
+import { useParams, Link } from "react-router-dom";
+import { useProducts } from "../contextAPI/ProductsContext";
+import { useDispatch } from "react-redux";
+import { addToCart } from "../rtk-store/cartSlice";
+import { useEffect, useState } from "react";
+import { FaRegCircleUser } from "react-icons/fa6";
+import { FaStar, FaTags, FaTruck, FaShieldAlt, FaRegCreditCard } from "react-icons/fa";
+
+export default function ProductDetails() {
+  const { id } = useParams();
+  const { products } = useProducts();
+  const product = products.find((item) => item.id.toString() === id);
+  const dispatch = useDispatch();
+
+  const [addedItems, setAddedItems] = useState({});
+  const [activeTab, setActiveTab] = useState("Specifications");
+  const [selectedImage, setSelectedImage] = useState("");
+
+  useEffect(() => {
+    if (product) {
+      setSelectedImage(product.images[0]);
+    }
+  }, [product]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  if (!product) {
+    return <h1 className="text-center text-red-500">Product not found</h1>;
+  }
+
+  const discount = product.originalPrice - product.finalPrice;
+  const percentage = Math.round((discount / product.originalPrice) * 100);
+
+  const handleAddToCart = (prod) => {
+    dispatch(addToCart(prod));
+    setAddedItems((prev) => ({ ...prev, [prod.id]: true }));
+    setTimeout(() => {
+      setAddedItems((prev) => ({ ...prev, [prod.id]: false }));
+    }, 1500);
+  };
+
+  return (
+    <>
+      {/* Product Section */}
+      <div className="p-4 pt-5 md:p-6 mt-6 flex flex-col lg:flex-row bg-black gap-6 lg:gap-8">
+        {/* Product Images */}
+        <div className="w-full lg:w-1/2 flex flex-col sm:flex-row gap-4">
+          <div className="flex sm:flex-col gap-2 sm:gap-4 overflow-x-auto sm:overflow-y-auto">
+            {product.images.map((img, index) => (
+              <img
+                key={index}
+                src={img}
+                alt={`Thumbnail ${index}`}
+                onClick={() => setSelectedImage(img)}
+                className={`w-20 h-20 sm:w-24 sm:h-24 object-contain border cursor-pointer p-1 rounded transition ${
+                  selectedImage === img ? "border-red-500" : "border-gray-600"
+                }`}
+              />
+            ))}
+          </div>
+          <div className="flex-1">
+            <img
+              src={selectedImage}
+              alt={product.title}
+              className="w-full h-auto max-h-[400px] sm:max-h-[500px] object-contain rounded"
+            />
+          </div>
+        </div>
+
+        {/* Product Info */}
+        <div className="w-full lg:w-1/2 text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold">{product.title}</h1>
+          <p className="text-base sm:text-lg">{product.info}</p>
+
+          <div className="flex items-center gap-1 mt-2">
+            {Array.from({ length: Math.round(product.rateCount || 0) }).map((_, i) => (
+              <FaStar key={i} className="text-red-500" />
+            ))}
+            <span className="text-sm text-gray-400"> | {product.ratings} Ratings</span>
+          </div>
+
+          <hr className="my-2" />
+
+          <div className="my-4 border-gray-700">
+            <h3 className="text-green-600 text-xl sm:text-2xl font-semibold">
+              ₹{product.finalPrice}
+              <span className="line-through text-lg text-gray-400 ml-2 sm:ml-4">
+                ₹{product.originalPrice}
+              </span>
+            </h3>
+          </div>
+
+          <p className="text-green-400 text-base sm:text-lg mt-2">
+            You save: ₹{discount} ({percentage}%)
+            <span className="inline-block bg-green-500 text-white rounded px-2 sm:px-3 py-1 ml-2 sm:ml-4">
+              ✔ In Stock
+            </span>
+          </p>
+          <p className="text-gray-400">(inclusive of all taxes)</p>
+
+          <hr className="my-4" />
+
+          <div className="mt-2 mb-6 text-gray-500">
+            <p className="text-gray-300 font-bold mb-2">Offers and Discounts</p>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+              <span className="border p-2 text-gray-500">No Cost EMI on Credit Card</span>
+              <span className="border p-2 text-gray-500">Pay Later & Avail Cashback</span>
+            </div>
+          </div>
+
+          <hr />
+
+          <button
+            onClick={() => handleAddToCart(product)}
+            className={`px-6 py-2 mt-2 sm:mt-6 w-full sm:w-2/3 md:w-1/2 rounded-lg transition-colors ${
+              addedItems[product.id]
+                ? "bg-green-600 text-white hover:bg-green-700"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {addedItems[product.id] ? "Added" : "Add to Cart"}
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-black flex flex-col items-center text-white p-4 sm:p-6">
+        <ul className="flex flex-wrap gap-2 sm:gap-4 justify-center mb-4 sm:mb-6">
+          {["Specifications", "Overview", "Reviews"].map((tab) => (
+            <li
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`cursor-pointer rounded px-3 sm:px-4 py-1 sm:py-2 text-sm sm:text-base transition ${
+                activeTab === tab ? "bg-red-600" : "hover:bg-red-500"
+              }`}
+            >
+              {tab}
+            </li>
+          ))}
+        </ul>
+
+        <div className="bg-black rounded-lg w-full max-w-8xl p-4 sm:p-6">
+          {activeTab === "Specifications" && (
+            <ul className="space-y-3 text-sm sm:text-base">
+              {[
+                { label: "Brand", value: product.brand },
+                { label: "Model", value: product.title },
+                { label: "Generic Name", value: product.info },
+                { label: "Headphone Type", value: product.type },
+                { label: "Connectivity", value: product.connectivity },
+                { label: "Microphone", value: product.microphone ? "Yes" : "No" },
+              ].map((spec, index) => (
+                <li key={index} className="flex flex-col sm:flex-row sm:items-center">
+                  <span className="font-semibold w-full sm:w-40 text-gray-500">{spec.label}</span>
+                  <span className="text-white">{spec.value}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {activeTab === "Overview" && (
+            <div>
+              <p className="text-sm sm:text-base">
+                The{" "}
+                <span className="text-lg sm:text-xl font-bold text-red-500">
+                  {product.title}
+                </span>{" "}
+                Headphones provide with fabulous sound quality
+              </p>
+              <ul className="list-disc list-inside text-gray-400">
+                <li>Sound Tuned to Perfection</li>
+                <li>Comfortable to wear</li>
+                <li>Long Hours Playback Time</li>
+              </ul>
+              <p className="text-gray-500 mt-4 text-sm sm:text-base">
+                Buy <span className="text-white">{product.title}</span> for an awesome music experience
+                with perfect flexibility, mobility, and sound quality.
+              </p>
+            </div>
+          )}
+
+          {activeTab === "Reviews" && (
+            <div className="bg-black rounded-lg w-full p-2 sm:p-4">
+              {[
+                { id: 1, name: "Atharva Kumar", date: "4 Aug 2022", rating: 5, review: "Sound is Awesome and as I expected, love it." },
+                { id: 2, name: "Ritika Sen", date: "15 July 2022", rating: 4, review: "Very good and awesome product" },
+                { id: 3, name: "Bhavesh Joshi", date: "10 June 2022", rating: 4, review: "Super amazing product!!!" },
+                { id: 4, name: "Anandi Gupta", date: "17 June 2022", rating: 5, review: "Nice sound" },
+                { id: 5, name: "Arif Khan", date: "27 April 2022", rating: 4, review: "Great sound, a bit flat." },
+                { id: 6, name: "Salmon Raj", date: "2 April 2022", rating: 3, review: "Very Good but still has flaws." },
+              ].map((r) => (
+                <div key={r.id} className="flex space-x-3 sm:space-x-4 mb-3 sm:mb-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center bg-white text-gray-500 justify-center">
+                    <FaRegCircleUser size={35} />
+                  </div>
+                  <div className="flex-1">
+                    <h5 className="text-sm sm:text-base">{r.name}</h5>
+                    <div className="flex text-red-500 text-xs sm:text-sm">
+                      {[...Array(5)].map((_, i) => (
+                        <FaStar
+                          key={i}
+                          className={i < r.rating ? "text-red-500" : "text-gray-500"}
+                        />
+                      ))}
+                      <span className="text-gray-400 px-1"> | {r.date}</span>
+                    </div>
+                    <p className="text-gray-300 mt-1 text-sm sm:text-base">{r.review}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Related Products */}
+      <div className="bg-black text-white p-4 sm:p-6">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">
+          Related Products
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          {products
+            .filter((p) => p.category === product.category && p.id !== product.id)
+            .map((related) => (
+              <div
+                key={related.id}
+                className="border border-gray-700 rounded-lg p-4 hover:shadow-lg transition"
+              >
+                <Link to={`/product/${related.id}`}>
+                  <img
+                    src={related.images[0]}
+                    alt={related.title}
+                    className="w-full h-32 sm:h-40 object-contain"
+                  />
+                  <div className="flex items-center gap-1 mt-2">
+                    {Array.from({ length: Math.round(related.rateCount || 0) }).map((_, i) => (
+                      <FaStar key={i} className="text-red-500" />
+                    ))}
+                  </div>
+                  <h3 className="text-base sm:text-lg font-semibold mt-2">{related.title}</h3>
+                </Link>
+                <p className="text-gray-400 text-sm sm:text-base">{related.info}</p>
+                <hr />
+                <p className="text-white font-bold text-2xl mt-1">
+                  ₹{related.finalPrice}
+                  <span className="text-gray-500 text-sm sm:text-xl ml-2 line-through">
+                    ₹{related.originalPrice}
+                  </span>
+                </p>
+                <button
+                  onClick={() => handleAddToCart(related)}
+                  className={`px-6 py-2 mt-2 sm:mt-6 w-full sm:w-2/3 md:w-1/2 rounded-lg transition-colors ${
+                    addedItems[related.id]
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-red-500 text-white"
+                  }`}
+                >
+                  {addedItems[related.id] ? "Added" : "Add to Cart"}
+                </button>
+              </div>
+            ))}
+        </div>
+      </div>
+
+      {/* Advantages */}
+      <h1 className="bg-black text-white text-center mb-0 pt-5">Our Advantages</h1>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-black">
+        <div className="flex items-center gap-3 p-3">
+          <FaTruck size={28} className="text-red-500" />
+          <div>
+            <h5 className="text-white">Express Delivery</h5>
+            <p className="text-gray-500">Ships in 24 Hours</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 p-3">
+          <FaShieldAlt size={28} className="text-red-500" />
+          <div>
+            <h5 className="text-white">Brand Warranty</h5>
+            <p className="text-gray-500">100% Original products</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 p-3">
+          <FaTags size={28} className="text-red-500" />
+          <div>
+            <h5 className="text-white">Exciting Deals</h5>
+            <p className="text-gray-500">On all prepaid orders</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 p-3">
+          <FaRegCreditCard size={28} className="text-red-500" />
+          <div>
+            <h5 className="text-white">Secure Payments</h5>
+            <p className="text-gray-500">SSL/Secure certificate</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
